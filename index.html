@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#C4530A"/>
+<title>CBK Canteen</title>
+<style>
+/* ===== RESET & BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F0EB;color:#1A0F00}
+:root{
+  --orange:#C4530A;--orange2:#E8813A;--orange-light:#FDF0E6;--orange-pale:#FEF8F3;
+  --green:#2D7D46;--red:#A32D2D;--gray:#6B6460;
+  --bg:#F5F0EB;--surface:#FFFFFF;--surface2:#FAF6F2;
+  --border:#E8DDD5;--text:#1A0F00;--text2:#6B6460;--text3:#A89890;
+  --radius:14px;--radius-sm:10px;--shadow:0 2px 12px rgba(196,83,10,0.10);
+}
+/* ===== LAYOUT ===== */
+#app{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px}
+.screen.hidden{display:none}
+/* ===== TOPBAR ===== */
+.topbar{background:var(--orange);color:white;padding:env(safe-area-inset-top,0) 0 0;flex-shrink:0;position:relative;z-index:10}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px}
+.topbar h1{font-size:17px;font-weight:600;letter-spacing:0.2px}
+.topbar .sub{font-size:11px;opacity:0.8;margin-top:1px}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{background:rgba(255,255,255,0.2);border:none;color:white;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;flex-shrink:0}
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,0);flex-shrink:0;position:relative;z-index:10}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;gap:3px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500}
+.nav-btn .nav-icon{font-size:22px;line-height:1}
+.nav-btn.active{color:var(--orange)}
+.nav-btn.active .nav-icon{transform:scale(1.1)}
+/* ===== TABS (horizontal scroll) ===== */
+.tabs-bar{display:flex;overflow-x:auto;gap:6px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs-bar::-webkit-scrollbar{display:none}
+.tab-pill{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.tab-pill.active{background:var(--orange);color:white;border-color:var(--orange)}
+/* ===== CARDS & SECTIONS ===== */
+.pad{padding:14px}
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
+.card-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card-body{padding:14px 16px}
+.section-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px}
+/* ===== FORM ===== */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:15px;background:var(--surface2);color:var(--text);appearance:none;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--orange);background:white}
+.field textarea{resize:none;height:72px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* ===== TOTAL BOX ===== */
+.total-box{background:var(--orange-light);border:1px solid #F0C4A0;border-radius:var(--radius-sm);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.total-box .lbl{font-size:13px;color:var(--orange);font-weight:500}
+.total-box .val{font-size:22px;font-weight:700;color:var(--orange)}
+/* ===== BUTTONS ===== */
+.btn{width:100%;padding:15px;border-radius:var(--radius-sm);border:none;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:0.2px}
+.btn-primary{background:var(--orange);color:white}
+.btn-primary:active{background:#A3430A}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-sm{padding:8px 16px;font-size:13px;width:auto}
+/* ===== ITEMS TABLE ===== */
+.items-wrap{overflow-x:auto;margin:0 -16px}
+.items-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:380px}
+.items-tbl th{text-align:left;padding:8px 10px;background:var(--surface2);font-weight:600;font-size:11px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)}
+.items-tbl td{padding:6px 8px;border-bottom:1px solid var(--border)}
+.items-tbl td input{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;background:var(--surface2);color:var(--text)}
+.items-tbl .line-total{font-weight:600;color:var(--orange);text-align:right}
+.items-tbl .del-cell{text-align:center;width:32px}
+.del-btn{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1}
+.add-item-btn{background:none;border:none;color:var(--orange);font-size:13px;font-weight:600;padding:10px 0 4px;cursor:pointer;display:flex;align-items:center;gap:4px}
+/* ===== ENTRY LIST ===== */
+.entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px}
+.entry-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.entry-title{font-size:14px;font-weight:600;flex:1}
+.entry-amount{font-size:16px;font-weight:700;color:var(--orange);flex-shrink:0}
+.entry-amount.exp{color:var(--red)}
+.entry-meta{font-size:11px;color:var(--text3);margin-top:4px}
+.entry-actions{display:flex;gap:6px;margin-top:8px}
+/* ===== METRICS ===== */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.metric{background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);padding:14px;text-align:center}
+.metric .m-val{font-size:20px;font-weight:700;color:var(--orange)}
+.metric .m-lbl{font-size:11px;color:var(--text3);margin-top:3px}
+/* ===== BADGES ===== */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.badge-green{background:#E6F4EC;color:#1B5E38}
+.badge-red{background:#FCEBEB;color:#A32D2D}
+.badge-gray{background:#F0ECE8;color:#6B6460}
+.badge-orange{background:var(--orange-light);color:var(--orange)}
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1A0F00;color:white;padding:10px 20px;border-radius:40px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+/* ===== LOGIN ===== */
+.login-wrap{min-height:100vh;background:var(--orange);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0}
+.login-logo{font-size:48px;margin-bottom:6px}
+.login-title{font-size:28px;font-weight:800;color:white;letter-spacing:-0.5px}
+.login-sub{font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:32px;margin-top:4px}
+.login-card{background:white;border-radius:20px;padding:24px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
+.branch-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.branch-tile{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 10px;text-align:center;cursor:pointer;background:var(--surface2)}
+.branch-tile.sel{border-color:var(--orange);background:var(--orange-light)}
+.branch-tile .bn{font-size:14px;font-weight:600}
+.branch-tile .bi{font-size:11px;color:var(--text3);margin-top:2px}
+.owner-tile{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px}
+.pin-wrap{display:flex;gap:8px;margin-bottom:14px}
+.pin-wrap input{flex:1;padding:13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:18px;letter-spacing:6px;text-align:center;background:var(--surface2)}
+.pin-wrap input:focus{outline:none;border-color:var(--orange)}
+.err-msg{background:#FCEBEB;color:#A32D2D;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:10px;text-align:center}
+/* ===== BAR CHART ===== */
+.bar-chart{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{width:64px;font-size:12px;color:var(--text2);text-align:right;flex-shrink:0}
+.bar-track{flex:1;background:var(--border);border-radius:4px;height:24px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--orange2));border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;color:white;font-weight:600;min-width:4px;transition:width 0.5s ease}
+/* ===== LOADING ===== */
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 0.7s linear infinite;margin:32px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{text-align:center;color:var(--text3);font-size:13px;padding:24px}
+.empty-state{text-align:center;padding:32px 16px;color:var(--text3);font-size:13px}
+/* ===== TOGGLE ===== */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);margin-top:8px}
+.toggle-label{font-size:13px;color:var(--text);flex:1;padding-right:12px}
+.toggle{position:relative;width:44px;height:26px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#D0C8C0;border-radius:20px;transition:0.2s;cursor:pointer}
+.toggle-slider:before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;background:white;border-radius:50%;transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle input:checked + .toggle-slider{background:var(--orange)}
+.toggle input:checked + .toggle-slider:before{transform:translateX(18px)}
+/* ===== HISTORY ===== */
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.hist-row:last-child{border-bottom:none}
+.hist-date{font-size:13px;font-weight:500}
+.hist-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.hist-amt{font-size:15px;font-weight:700;color:var(--orange)}
+</style>
+</head>
+<body>
+
+<!-- SETUP BANNER (shown until script URL is configured) -->
+<div id="setup-banner" style="display:none;background:#FFF3CD;border-bottom:1px solid #FFD97D;padding:10px 14px;font-size:12px;color:#856404;text-align:center;line-height:1.5">
+  ⚠️ <strong>Setup needed:</strong> Open this file, find <code>SCRIPT_URL</code> at the top and paste your Apps Script Web App URL.
+</div>
+
+<div id="app" style="display:none">
+  <!-- LOGIN -->
+  <div id="screen-login" class="screen" style="overflow-y:auto;padding-bottom:0">
+    <div class="login-wrap">
+      <div class="login-logo">🍽️</div>
+      <div class="login-title">CBK Canteen</div>
+      <div class="login-sub">Chandra Bhavan Kitchens</div>
+      <div class="login-card">
+        <div id="login-err" style="display:none" class="err-msg"></div>
+        <div class="section-label" style="margin-bottom:8px">Select branch</div>
+        <div class="branch-grid" id="branch-grid">
+          <div class="branch-tile" onclick="selBranch('south1')"><div class="bn">South 1</div><div class="bi">Branch</div></div>
+          <div class="branch-tile" onclick="selBranch('south2')"><div class="bn">South 2</div><div class="bi">Branch</div></div>
+          <div class="branch-tile" onclick="selBranch('north')"><div class="bn">North</div><div class="bi">Branch</div></div>
+          <div class="branch-tile" onclick="selBranch('ecity')"><div class="bn">E-City</div><div class="bi">Branch</div></div>
+          <div class="branch-tile owner-tile" onclick="selBranch('owner')">🏢 <div><div class="bn">Owner Dashboard</div><div class="bi">All branches</div></div></div>
+        </div>
+        <div class="pin-wrap">
+          <input type="password" id="pin-input" inputmode="numeric" placeholder="PIN" maxlength="6" onkeydown="if(event.key==='Enter')doLogin()"/>
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()" id="login-btn">Login →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRANCH APP -->
+  <div id="screen-branch" class="screen hidden" style="display:flex;flex-direction:column;height:100vh">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div><div class="sub" id="branch-sub">Branch</div><h1 id="branch-title">CBK</h1></div>
+        <div class="topbar-actions">
+          <button class="icon-btn" onclick="logout()">⎋</button>
+        </div>
+      </div>
+    </div>
+    <div class="tabs-bar" id="branch-tabs">
+      <div class="tab-pill active" onclick="branchTab('cash',this)">💰 Collections</div>
+      <div class="tab-pill" onclick="branchTab('items',this)">📋 Item Sales</div>
+      <div class="tab-pill" onclick="branchTab('expenses',this)">🧾 Expenses</div>
+      <div class="tab-pill" onclick="branchTab('history',this)">📅 History</div>
+    </div>
+    <div id="branch-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px"></div>
+  </div>
+
+  <!-- OWNER APP -->
+  <div id="screen-owner" class="screen hidden" style="display:flex;flex-direction:column;height:100vh">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div><div class="sub">Owner Dashboard</div><h1>CBK — All Branches</h1></div>
+        <button class="icon-btn" onclick="logout()">⎋</button>
+      </div>
+    </div>
+    <div class="tabs-bar">
+      <div class="tab-pill active" onclick="ownerTab('overview',this)">📊 Overview</div>
+      <div class="tab-pill" onclick="ownerTab('details',this)">🔍 Branch Detail</div>
+      <div class="tab-pill" onclick="ownerTab('owner-exp',this)">💸 Owner Expenses</div>
+    </div>
+    <div id="owner-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ============================================================
+// 🔧 CONFIGURATION — Paste your Apps Script Web App URL below
+// ============================================================
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhqVAXXBAfIu59y3RFSXuQsQv287dnNatrXeBWmlSF2JlqShhleDhy1HYsvjrLhOHj/exec';
+// ============================================================
+
+const BRANCHES = {south1:'South 1',south2:'South 2',north:'North',ecity:'E-City'};
+const fmt = n => '₹' + Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
+const today = () => new Date().toISOString().slice(0,10);
+
+let APP = { user:null, branchTab:'cash', ownerTab:'overview', itemRows:[{name:'',qty:'',price:''}], detailBranch:'south1', detailDate:today(), oeFilterBranch:'' };
+
+// ---- API ----
+async function api(action, params={}) {
+  const url = SCRIPT_URL + '?action=' + action + '&' + new URLSearchParams(params);
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'API error');
+    return json.data;
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+    throw e;
+  }
+}
+
+// ---- INIT ----
+window.onload = () => {
+  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+    document.getElementById('setup-banner').style.display='block';
+  }
+  document.getElementById('app').style.display='flex';
+  document.getElementById('app').style.flexDirection='column';
+  document.getElementById('app').style.height='100vh';
+  showScreen('login');
+};
+
+function showScreen(name) {
+  ['login','branch','owner'].forEach(s => {
+    const el=document.getElementById('screen-'+s);
+    el.style.display = s===name ? (name==='login'?'block':'flex') : 'none';
+    if(s===name) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+}
+
+// ---- LOGIN ----
+let selBranchId = null;
+function selBranch(id) {
+  selBranchId = id;
+  document.querySelectorAll('.branch-tile').forEach(t => t.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+}
+async function doLogin() {
+  const pin = document.getElementById('pin-input').value;
+  const errEl = document.getElementById('login-err');
+  const btn = document.getElementById('login-btn');
+  errEl.style.display='none';
+  if (!selBranchId) { errEl.textContent='Please select a branch'; errEl.style.display='block'; return; }
+  btn.textContent='Logging in…'; btn.disabled=true;
+  try {
+    const user = await api('login', { branchId: selBranchId, pin });
+    APP.user = user;
+    if (user.role === 'owner') {
+      showScreen('owner');
+      loadOwnerOverview();
+    } else {
+      document.getElementById('branch-title').textContent = 'CBK — ' + user.name;
+      document.getElementById('branch-sub').textContent = 'Branch';
+      showScreen('branch');
+      loadBranchTab('cash');
+      // reset tabs ui
+      document.querySelectorAll('#branch-tabs .tab-pill').forEach((t,i)=>t.classList.toggle('active',i===0));
+    }
+  } catch(e) {
+    errEl.textContent = 'Incorrect PIN or network error';
+    errEl.style.display='block';
+  }
+  btn.textContent='Login →'; btn.disabled=false;
+}
+function logout() { APP.user=null; selBranchId=null; document.getElementById('pin-input').value=''; document.querySelectorAll('.branch-tile').forEach(t=>t.classList.remove('sel')); showScreen('login'); }
+
+// ---- BRANCH TABS ----
+function branchTab(tab, el) {
+  APP.branchTab = tab;
+  document.querySelectorAll('#branch-tabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  loadBranchTab(tab);
+}
+function loadBranchTab(tab) {
+  const c = document.getElementById('branch-content');
+  c.innerHTML = '<div class="spinner"></div>';
+  if(tab==='cash') renderCash();
+  else if(tab==='items') renderItems();
+  else if(tab==='expenses') renderExpenses();
+  else if(tab==='history') renderHistory();
+}
+
+// ---- CASH ----
+async function renderCash() {
+  const saved = await api('getCash',{branchId:APP.user.branchId,date:today()}).catch(()=>null)||{};
+  const c=document.getElementById('branch-content');
+  c.innerHTML=`
+  <div class="pad">
+    <div class="card">
+      <div class="card-header">💰 Daily Collections — ${today()}</div>
+      <div class="card-body">
+        <div class="grid2">
+          <div class="field"><label>Cash</label><input type="number" id="c-cash" value="${saved.cash||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
+          <div class="field"><label>Coupons</label><input type="number" id="c-coupons" value="${saved.coupons||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
+          <div class="field"><label>Tea/Coffee Coupons</label><input type="number" id="c-tea" value="${saved.teaCoffee||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
+          <div class="field"><label>Online Transfer</label><input type="number" id="c-online" value="${saved.online||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
+        </div>
+        <div class="total-box">
+          <span class="lbl">Grand Total</span>
+          <span class="val" id="cash-total">${fmt(saved.total||0)}</span>
+        </div>
+        <div style="margin-top:14px"><button class="btn btn-primary" onclick="saveCash()">Save Collections</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+function calcCash(){
+  const g=id=>Number(document.getElementById(id)?.value||0);
+  const t=g('c-cash')+g('c-coupons')+g('c-tea')+g('c-online');
+  const el=document.getElementById('cash-total');
+  if(el) el.textContent=fmt(t);
+}
+async function saveCash(){
+  const g=id=>document.getElementById(id)?.value||'0';
+  try{
+    await api('saveCash',{branchId:APP.user.branchId,date:today(),cash:g('c-cash'),coupons:g('c-coupons'),teaCoffee:g('c-tea'),online:g('c-online')});
+    showToast('Collections saved ✓');
+  }catch(e){}
+}
+
+// ---- ITEMS ----
+async function renderItems(){
+  const saved = await api('getItems',{branchId:APP.user.branchId,date:today()}).catch(()=>[]);
+  if(saved&&saved.length) APP.itemRows=saved.map(r=>({name:r.itemName,qty:r.qty,price:r.price}));
+  else if(!APP.itemRows.length) APP.itemRows=[{name:'',qty:'',price:''}];
+  buildItemsUI();
+}
+function buildItemsUI(){
+  const grand = APP.itemRows.reduce((s,r)=>s+(Number(r.qty)||0)*(Number(r.price)||0),0);
+  const rows = APP.itemRows.map((r,i)=>`
+    <tr>
+      <td><input value="${r.name}" placeholder="Item name" oninput="APP.itemRows[${i}].name=this.value"/></td>
+      <td><input type="number" value="${r.qty}" inputmode="numeric" placeholder="0" style="width:60px" oninput="APP.itemRows[${i}].qty=this.value;refreshItems()"/></td>
+      <td><input type="number" value="${r.price}" inputmode="numeric" placeholder="0" style="width:80px" oninput="APP.itemRows[${i}].price=this.value;refreshItems()"/></td>
+      <td class="line-total" id="lt-${i}">${fmt((Number(r.qty)||0)*(Number(r.price)||0))}</td>
+      <td class="del-cell"><button class="del-btn" onclick="removeItem(${i})">×</button></td>
+    </tr>`).join('');
+  document.getElementById('branch-content').innerHTML=`
+  <div class="pad">
+    <div class="card">
+      <div class="card-header">📋 Item-wise Sales — ${today()}</div>
+      <div class="card-body">
+        <div class="items-wrap">
+          <table class="items-tbl">
+            <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
+            <tbody id="items-body">${rows}</tbody>
+          </table>
+        </div>
+        <button class="add-item-btn" onclick="addItem()">＋ Add item</button>
+        <div class="total-box"><span class="lbl">Total Sales</span><span class="val" id="items-grand">${fmt(grand)}</span></div>
+        <div style="margin-top:14px"><button class="btn btn-primary" onclick="saveItems()">Save Sales</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+function refreshItems(){
+  let grand=0;
+  APP.itemRows.forEach((r,i)=>{
+    const t=(Number(r.qty)||0)*(Number(r.price)||0);grand+=t;
+    const el=document.getElementById('lt-'+i);if(el)el.textContent=fmt(t);
+  });
+  const g=document.getElementById('items-grand');if(g)g.textContent=fmt(grand);
+}
+function addItem(){APP.itemRows.push({name:'',qty:'',price:''});buildItemsUI()}
+function removeItem(i){APP.itemRows.splice(i,1);if(!APP.itemRows.length)APP.itemRows=[{name:'',qty:'',price:''}];buildItemsUI()}
+async function saveItems(){
+  // sync names from DOM before saving
+  APP.itemRows.forEach((r,i)=>{const el=document.querySelector(`#items-body tr:nth-child(${i+1}) input`);if(el)r.name=el.value;});
+  try{
+    await api('saveItems',{branchId:APP.user.branchId,date:today(),rows:JSON.stringify(APP.itemRows)});
+    showToast('Item sales saved ✓');
+  }catch(e){}
+}
+
+// ---- EXPENSES ----
+async function renderExpenses(){
+  const [exps, ownerExps] = await Promise.all([
+    api('getExpenses',{branchId:APP.user.branchId}).catch(()=>[]),
+    api('getOwnerExp',{branchId:APP.user.branchId}).catch(()=>[])
+  ]);
+  const visOwner=(ownerExps||[]).filter(e=>e.visibleToBranch==='YES');
+  const expHtml = (exps||[]).length ? exps.slice().reverse().map(e=>`
+    <div class="entry">
+      <div class="entry-top">
+        <span class="entry-title">${e.description}</span>
+        <span class="entry-amount exp">${fmt(e.amount)}</span>
+      </div>
+      <div class="entry-meta">${e.date} · ${e.mode}${e.remarks?' · '+e.remarks:''}</div>
+      <div class="entry-actions"><button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="delExp('${e.rowId}')">Delete</button></div>
+    </div>`).join('') : '<div class="empty-state">No expenses yet</div>';
+  const ownerHtml = visOwner.length ? visOwner.map(e=>`
+    <div class="entry">
+      <div class="entry-top"><span class="entry-title">${e.description}</span><span class="entry-amount exp">${fmt(e.amount)}</span></div>
+      <div class="entry-meta">${e.date} · ${e.mode}${e.remarks?' · '+e.remarks:''} <span class="badge badge-gray">Owner</span></div>
+    </div>`).join('') : '';
+  document.getElementById('branch-content').innerHTML=`
+  <div class="pad">
+    <div class="card">
+      <div class="card-header">🧾 Add Expense</div>
+      <div class="card-body">
+        <div class="field"><label>Description</label><input type="text" id="exp-desc" placeholder="e.g. Gas cylinder"/></div>
+        <div class="grid2">
+          <div class="field"><label>Amount (₹)</label><input type="number" id="exp-amt" inputmode="numeric" placeholder="0"/></div>
+          <div class="field"><label>Mode</label><select id="exp-mode"><option>Cash</option><option>Online</option><option>Cheque</option><option>Other</option></select></div>
+        </div>
+        <div class="field"><label>Remarks</label><input type="text" id="exp-rem" placeholder="Optional"/></div>
+        <button class="btn btn-primary" onclick="addExp()">Add Expense</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Branch Expenses</div>
+      <div class="card-body">${expHtml}</div>
+    </div>
+    ${visOwner.length?`<div class="card"><div class="card-header">Owner Expenses <span class="badge badge-orange">Visible to you</span></div><div class="card-body">${ownerHtml}</div></div>`:''}
+  </div>`;
+}
+async function addExp(){
+  const desc=document.getElementById('exp-desc')?.value;
+  const amt=document.getElementById('exp-amt')?.value;
+  const mode=document.getElementById('exp-mode')?.value;
+  const rem=document.getElementById('exp-rem')?.value;
+  if(!desc||!amt){showToast('Fill description & amount',true);return;}
+  try{
+    await api('addExpense',{branchId:APP.user.branchId,description:desc,amount:amt,mode,remarks:rem,date:today()});
+    showToast('Expense added ✓');
+    renderExpenses();
+  }catch(e){}
+}
+async function delExp(rowId){
+  if(!confirm('Delete this expense?'))return;
+  await api('delExpense',{rowId}).catch(()=>{});
+  showToast('Deleted');renderExpenses();
+}
+
+// ---- HISTORY ----
+async function renderHistory(){
+  const data = await api('getHistory',{branchId:APP.user.branchId}).catch(()=>[]);
+  const rows = (data||[]).map(d=>`
+    <div class="hist-row">
+      <div><div class="hist-date">${d.date}</div><div class="hist-sub">Cash: ${fmt(d.cashTotal)} · Items: ${fmt(d.itemTotal)}</div></div>
+      <div class="hist-amt">${fmt(d.total)}</div>
+    </div>`).join('');
+  document.getElementById('branch-content').innerHTML=`
+  <div class="pad">
+    <div class="card">
+      <div class="card-header">📅 Last 30 Days</div>
+      <div class="card-body">${rows||'<div class="empty-state">No history found</div>'}</div>
+    </div>
+  </div>`;
+}
+
+// ---- OWNER TABS ----
+function ownerTab(tab, el) {
+  APP.ownerTab=tab;
+  document.querySelectorAll('#screen-owner .tabs-bar .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(tab==='overview') loadOwnerOverview();
+  else if(tab==='details') loadOwnerDetails();
+  else if(tab==='owner-exp') loadOwnerExpenses();
+}
+async function loadOwnerOverview(){
+  document.getElementById('owner-content').innerHTML='<div class="spinner"></div>';
+  const data = await api('getOverview',{date:today()}).catch(()=>null);
+  if(!data){document.getElementById('owner-content').innerHTML='<div class="loading-text">Failed to load</div>';return;}
+  const totIncome=data.branches.reduce((s,b)=>s+b.income,0);
+  const totExp=data.branches.reduce((s,b)=>s+b.totalExp,0);
+  const maxInc=Math.max(...data.branches.map(b=>b.income),1);
+  const bars=data.branches.map(b=>`
+    <div class="bar-row">
+      <span class="bar-label">${b.name}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(b.income/maxInc*100)}%">${b.income>0?fmt(b.income):''}</div></div>
+    </div>`).join('');
+  const cards=data.branches.map(b=>`
+    <div class="entry">
+      <div class="entry-top"><span class="entry-title">${b.name}</span><span class="entry-amount">${fmt(b.net)}</span></div>
+      <div class="entry-meta">Income: ${fmt(b.income)} · Expenses: ${fmt(b.totalExp)}</div>
+    </div>`).join('');
+  document.getElementById('owner-content').innerHTML=`
+  <div class="pad">
+    <div class="metrics">
+      <div class="metric"><div class="m-val">${fmt(totIncome)}</div><div class="m-lbl">Total Income</div></div>
+      <div class="metric"><div class="m-val">${fmt(totExp)}</div><div class="m-lbl">Total Expenses</div></div>
+      <div class="metric" style="grid-column:1/-1"><div class="m-val">${fmt(totIncome-totExp)}</div><div class="m-lbl">Net Today — ${today()}</div></div>
+    </div>
+    <div class="card"><div class="card-header">📊 Income by Branch</div><div class="card-body"><div class="bar-chart">${bars}</div></div></div>
+    <div class="card"><div class="card-header">Branch Summary</div><div class="card-body">${cards}</div></div>
+  </div>`;
+}
+async function loadOwnerDetails(){
+  document.getElementById('owner-content').innerHTML=`
+  <div class="pad">
+    <div class="card">
+      <div class="card-body">
+        <div class="field"><label>Branch</label>
+          <select id="det-branch" onchange="APP.detailBranch=this.value;fetchDetail()">
+            ${Object.entries(BRANCHES).map(([id,n])=>`<option value="${id}"${APP.detailBranch===id?' selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Date</label><input type="date" id="det-date" value="${APP.detailDate}" onchange="APP.detailDate=this.value;fetchDetail()"/></div>
+      </div>
+    </div>
+    <div id="detail-body"><div class="spinner"></div></div>
+  </div>`;
+  fetchDetail();
+}
+async function fetchDetail(){
+  document.getElementById('detail-body').innerHTML='<div class="spinner"></div>';
+  const d=await api('getBranchDetail',{branchId:APP.detailBranch,date:APP.detailDate}).catch(()=>null);
+  if(!d){document.getElementById('detail-body').innerHTML='<div class="loading-text">Failed to load</div>';return;}
+  const cashTot=d.cash?Number(d.cash.total||0):0;
+  const itemTot=(d.items||[]).reduce((s,r)=>s+Number(r.lineTotal||0),0);
+  const expTot=(d.expenses||[]).reduce((s,r)=>s+Number(r.amount||0),0);
+  const oExpTot=(d.ownerExp||[]).reduce((s,r)=>s+Number(r.amount||0),0);
+  const cashBreak=d.cash?`
+    <div class="grid2" style="margin-top:8px">
+      <div class="entry"><div class="entry-top"><span>Cash</span><span class="entry-amount">${fmt(d.cash.cash)}</span></div></div>
+      <div class="entry"><div class="entry-top"><span>Coupons</span><span class="entry-amount">${fmt(d.cash.coupons)}</span></div></div>
+      <div class="entry"><div class="entry-top"><span>Tea/Coffee</span><span class="entry-amount">${fmt(d.cash.teaCoffee)}</span></div></div>
+      <div class="entry"><div class="entry-top"><span>Online</span><span class="entry-amount">${fmt(d.cash.online)}</span></div></div>
+    </div>`:'<div class="empty-state">No collections data</div>';
+  const itemRows=(d.items||[]).length?(d.items.map(r=>`
+    <div class="entry"><div class="entry-top"><span>${r.itemName} × ${r.qty}</span><span class="entry-amount">${fmt(r.lineTotal)}</span></div>
+    <div class="entry-meta">₹${r.price} each</div></div>`).join('')):'<div class="empty-state">No item sales data</div>';
+  const expRows=(d.expenses||[]).length?(d.expenses.map(e=>`
+    <div class="entry"><div class="entry-top"><span>${e.description}</span><span class="entry-amount exp">${fmt(e.amount)}</span></div>
+    <div class="entry-meta">${e.mode}${e.remarks?' · '+e.remarks:''}</div></div>`).join('')):'';
+  const oExpRows=(d.ownerExp||[]).length?(d.ownerExp.map(e=>`
+    <div class="entry"><div class="entry-top"><span>${e.description}</span><span class="entry-amount exp">${fmt(e.amount)}</span></div>
+    <div class="entry-meta">${e.mode}${e.remarks?' · '+e.remarks:''} <span class="badge ${e.visibleToBranch==='YES'?'badge-green':'badge-gray'}">${e.visibleToBranch==='YES'?'Visible':'Hidden'}</span></div></div>`).join('')):'';
+  document.getElementById('detail-body').innerHTML=`
+    <div class="metrics">
+      <div class="metric"><div class="m-val">${fmt(cashTot)}</div><div class="m-lbl">Cash Collections</div></div>
+      <div class="metric"><div class="m-val">${fmt(itemTot)}</div><div class="m-lbl">Item Sales</div></div>
+      <div class="metric"><div class="m-val">${fmt(expTot+oExpTot)}</div><div class="m-lbl">Total Expenses</div></div>
+      <div class="metric"><div class="m-val">${fmt(cashTot+itemTot-expTot-oExpTot)}</div><div class="m-lbl">Net</div></div>
+    </div>
+    <div class="card"><div class="card-header">Collections Breakdown</div><div class="card-body">${cashBreak}</div></div>
+    <div class="card"><div class="card-header">Item Sales</div><div class="card-body">${itemRows}</div></div>
+    ${(d.expenses||[]).length||oExpRows?`<div class="card"><div class="card-header">Expenses</div><div class="card-body">${expRows}${oExpRows?'<div style="margin-top:8px;font-size:12px;font-weight:600;color:var(--text3)">OWNER EXPENSES</div>'+oExpRows:''}</div></div>`:''}`;
+}
+async function loadOwnerExpenses(){
+  const exps=await api('getOwnerExp',{branchId:'all'}).catch(()=>[]);
+  const filt=(exps||[]).filter(e=>!APP.oeFilterBranch||e.branchId===APP.oeFilterBranch);
+  document.getElementById('owner-content').innerHTML=`
+  <div class="pad">
+    <div class="card">
+      <div class="card-header">💸 Add Owner Expense</div>
+      <div class="card-body">
+        <div class="field"><label>Branch</label>
+          <select id="oe-branch">${Object.entries(BRANCHES).map(([id,n])=>`<option value="${id}">${n}</option>`).join('')}</select>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Amount (₹)</label><input type="number" id="oe-amt" inputmode="numeric" placeholder="0"/></div>
+          <div class="field"><label>Mode</label><select id="oe-mode"><option>Cash</option><option>Online</option><option>Cheque</option><option>Other</option></select></div>
+        </div>
+        <div class="field"><label>Description</label><input type="text" id="oe-desc" placeholder="Expense description"/></div>
+        <div class="field"><label>Remarks</label><input type="text" id="oe-rem" placeholder="Optional"/></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Visible to branch staff</span>
+          <label class="toggle"><input type="checkbox" id="oe-vis"/><span class="toggle-slider"></span></label>
+        </div>
+        <div style="margin-top:14px"><button class="btn btn-primary" onclick="addOwnerExp()">Add Expense</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">All Owner Expenses</div>
+      <div class="card-body">
+        <div class="field"><label>Filter by branch</label>
+          <select onchange="APP.oeFilterBranch=this.value;loadOwnerExpenses()">
+            <option value="">All Branches</option>
+            ${Object.entries(BRANCHES).map(([id,n])=>`<option value="${id}"${APP.oeFilterBranch===id?' selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+        ${filt.length?filt.slice().reverse().map(e=>`
+          <div class="entry">
+            <div class="entry-top">
+              <span class="entry-title">${BRANCHES[e.branchId]||e.branchId} — ${e.description}</span>
+              <span class="entry-amount exp">${fmt(e.amount)}</span>
+            </div>
+            <div class="entry-meta">${e.date} · ${e.mode}${e.remarks?' · '+e.remarks:''} <span class="badge ${e.visibleToBranch==='YES'?'badge-green':'badge-gray'}">${e.visibleToBranch==='YES'?'Visible to branch':'Hidden'}</span></div>
+            <div class="entry-actions"><button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="delOwnerExp('${e.rowId}')">Delete</button></div>
+          </div>`).join(''):'<div class="empty-state">No owner expenses yet</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+async function addOwnerExp(){
+  const branchId=document.getElementById('oe-branch')?.value;
+  const amt=document.getElementById('oe-amt')?.value;
+  const desc=document.getElementById('oe-desc')?.value;
+  const mode=document.getElementById('oe-mode')?.value;
+  const rem=document.getElementById('oe-rem')?.value;
+  const vis=document.getElementById('oe-vis')?.checked;
+  if(!desc||!amt){showToast('Fill description & amount',true);return;}
+  try{
+    await api('addOwnerExp',{branchId,amount:amt,description:desc,mode,remarks:rem,visibleToBranch:vis,date:today()});
+    showToast('Expense added ✓');
+    loadOwnerExpenses();
+  }catch(e){}
+}
+async function delOwnerExp(rowId){
+  if(!confirm('Delete this expense?'))return;
+  await api('delOwnerExp',{rowId}).catch(()=>{});
+  showToast('Deleted');loadOwnerExpenses();
+}
+
+// ---- TOAST ----
+function showToast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=err?'#A32D2D':'#1A0F00';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

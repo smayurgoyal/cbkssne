@@ -118,6 +118,12 @@ html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-sy
 .bar-label{width:64px;font-size:12px;color:var(--text2);text-align:right;flex-shrink:0}
 .bar-track{flex:1;background:var(--border);border-radius:4px;height:24px;overflow:hidden}
 .bar-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--orange2));border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;color:white;font-weight:600;min-width:4px;transition:width 0.5s ease}
+
+.date-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.date-bar label{font-size:12px;font-weight:600;color:var(--text3);white-space:nowrap}
+.date-bar input[type=date]{flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface2);color:var(--text);font-weight:500}
+.date-bar .today-btn{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;background:var(--orange-light);color:var(--orange);cursor:pointer;white-space:nowrap}
+
 /* ===== LOADING ===== */
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 0.7s linear infinite;margin:32px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -188,6 +194,11 @@ html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-sy
       <div class="tab-pill" onclick="branchTab('expenses',this)">🧾 Expenses</div>
       <div class="tab-pill" onclick="branchTab('history',this)">📅 History</div>
     </div>
+    <div class="date-bar" id="branch-date-bar">
+      <label>📅 Date</label>
+      <input type="date" id="branch-date" onchange="APP.selectedDate=this.value;APP.itemRows=[{name:'',qty:'',price:''}];loadBranchTab(APP.branchTab)"/>
+      <button class="today-btn" onclick="APP.selectedDate=today();document.getElementById('branch-date').value=today();APP.itemRows=[{name:'',qty:'',price:''}];loadBranchTab(APP.branchTab)">Today</button>
+    </div>
     <div id="branch-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px"></div>
   </div>
 
@@ -203,6 +214,11 @@ html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-sy
       <div class="tab-pill active" onclick="ownerTab('overview',this)">📊 Overview</div>
       <div class="tab-pill" onclick="ownerTab('details',this)">🔍 Branch Detail</div>
       <div class="tab-pill" onclick="ownerTab('owner-exp',this)">💸 Owner Expenses</div>
+    </div>
+    <div class="date-bar" id="owner-date-bar">
+      <label>📅 Date</label>
+      <input type="date" id="owner-date" onchange="APP.overviewDate=this.value;reloadOwnerTab()"/>
+      <button class="today-btn" onclick="APP.overviewDate=today();document.getElementById('owner-date').value=today();reloadOwnerTab()">Today</button>
     </div>
     <div id="owner-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px"></div>
   </div>
@@ -221,7 +237,7 @@ const BRANCHES = {south1:'South 1',south2:'South 2',north:'North',ecity:'E-City'
 const fmt = n => '₹' + Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
 const today = () => new Date().toISOString().slice(0,10);
 
-let APP = { user:null, branchTab:'cash', ownerTab:'overview', itemRows:[{name:'',qty:'',price:''}], detailBranch:'south1', detailDate:today(), oeFilterBranch:'' };
+let APP = { user:null, branchTab:'cash', ownerTab:'overview', itemRows:[{name:'',qty:'',price:''}], detailBranch:'south1', detailDate:today(), oeFilterBranch:'', selectedDate:today(), overviewDate:today() };
 
 // ---- API ----
 async function api(action, params={}) {
@@ -276,11 +292,13 @@ async function doLogin() {
     APP.user = user;
     if (user.role === 'owner') {
       showScreen('owner');
+      APP.overviewDate=today();setTimeout(()=>{const d=document.getElementById('owner-date');if(d)d.value=today();},50);
       loadOwnerOverview();
     } else {
       document.getElementById('branch-title').textContent = 'CBK — ' + user.name;
       document.getElementById('branch-sub').textContent = 'Branch';
       showScreen('branch');
+      APP.selectedDate=today();setTimeout(()=>{const d=document.getElementById('branch-date');if(d)d.value=today();},50);
       loadBranchTab('cash');
       // reset tabs ui
       document.querySelectorAll('#branch-tabs .tab-pill').forEach((t,i)=>t.classList.toggle('active',i===0));
@@ -311,12 +329,13 @@ function loadBranchTab(tab) {
 
 // ---- CASH ----
 async function renderCash() {
-  const saved = await api('getCash',{branchId:APP.user.branchId,date:today()}).catch(()=>null)||{};
+  const dt=APP.selectedDate;
+  const saved = await api('getCash',{branchId:APP.user.branchId,date:dt}).catch(()=>null)||{};
   const c=document.getElementById('branch-content');
   c.innerHTML=`
   <div class="pad">
     <div class="card">
-      <div class="card-header">💰 Daily Collections — ${today()}</div>
+      <div class="card-header">💰 Daily Collections — ${dt}</div>
       <div class="card-body">
         <div class="grid2">
           <div class="field"><label>Cash</label><input type="number" id="c-cash" value="${saved.cash||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
@@ -342,14 +361,15 @@ function calcCash(){
 async function saveCash(){
   const g=id=>document.getElementById(id)?.value||'0';
   try{
-    await api('saveCash',{branchId:APP.user.branchId,date:today(),cash:g('c-cash'),coupons:g('c-coupons'),teaCoffee:g('c-tea'),online:g('c-online')});
+    await api('saveCash',{branchId:APP.user.branchId,date:APP.selectedDate,cash:g('c-cash'),coupons:g('c-coupons'),teaCoffee:g('c-tea'),online:g('c-online')});
     showToast('Collections saved ✓');
   }catch(e){}
 }
 
 // ---- ITEMS ----
 async function renderItems(){
-  const saved = await api('getItems',{branchId:APP.user.branchId,date:today()}).catch(()=>[]);
+  const dt=APP.selectedDate;
+  const saved = await api('getItems',{branchId:APP.user.branchId,date:dt}).catch(()=>[]);
   if(saved&&saved.length) APP.itemRows=saved.map(r=>({name:r.itemName,qty:r.qty,price:r.price}));
   else if(!APP.itemRows.length) APP.itemRows=[{name:'',qty:'',price:''}];
   buildItemsUI();
@@ -367,7 +387,7 @@ function buildItemsUI(){
   document.getElementById('branch-content').innerHTML=`
   <div class="pad">
     <div class="card">
-      <div class="card-header">📋 Item-wise Sales — ${today()}</div>
+      <div class="card-header">📋 Item-wise Sales — ${APP.selectedDate}</div>
       <div class="card-body">
         <div class="items-wrap">
           <table class="items-tbl">
@@ -396,13 +416,14 @@ async function saveItems(){
   // sync names from DOM before saving
   APP.itemRows.forEach((r,i)=>{const el=document.querySelector(`#items-body tr:nth-child(${i+1}) input`);if(el)r.name=el.value;});
   try{
-    await api('saveItems',{branchId:APP.user.branchId,date:today(),rows:JSON.stringify(APP.itemRows)});
+    await api('saveItems',{branchId:APP.user.branchId,date:APP.selectedDate,rows:JSON.stringify(APP.itemRows)});
     showToast('Item sales saved ✓');
   }catch(e){}
 }
 
 // ---- EXPENSES ----
 async function renderExpenses(){
+  setTimeout(()=>{const d=document.getElementById('exp-date');if(d)d.value=APP.selectedDate;},100);
   const [exps, ownerExps] = await Promise.all([
     api('getExpenses',{branchId:APP.user.branchId}).catch(()=>[]),
     api('getOwnerExp',{branchId:APP.user.branchId}).catch(()=>[])
@@ -427,6 +448,7 @@ async function renderExpenses(){
     <div class="card">
       <div class="card-header">🧾 Add Expense</div>
       <div class="card-body">
+        <div class="field"><label>Date</label><input type="date" id="exp-date" value="" style="background:var(--surface2)"/></div>
         <div class="field"><label>Description</label><input type="text" id="exp-desc" placeholder="e.g. Gas cylinder"/></div>
         <div class="grid2">
           <div class="field"><label>Amount (₹)</label><input type="number" id="exp-amt" inputmode="numeric" placeholder="0"/></div>
@@ -450,7 +472,8 @@ async function addExp(){
   const rem=document.getElementById('exp-rem')?.value;
   if(!desc||!amt){showToast('Fill description & amount',true);return;}
   try{
-    await api('addExpense',{branchId:APP.user.branchId,description:desc,amount:amt,mode,remarks:rem,date:today()});
+    const expDate=document.getElementById('exp-date')?.value||APP.selectedDate;
+    await api('addExpense',{branchId:APP.user.branchId,description:desc,amount:amt,mode,remarks:rem,date:expDate});
     showToast('Expense added ✓');
     renderExpenses();
   }catch(e){}
@@ -484,12 +507,12 @@ function ownerTab(tab, el) {
   document.querySelectorAll('#screen-owner .tabs-bar .tab-pill').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   if(tab==='overview') loadOwnerOverview();
-  else if(tab==='details') loadOwnerDetails();
+  else if(tab==='details'){ APP.detailDate=APP.overviewDate; loadOwnerDetails(); }
   else if(tab==='owner-exp') loadOwnerExpenses();
 }
 async function loadOwnerOverview(){
   document.getElementById('owner-content').innerHTML='<div class="spinner"></div>';
-  const data = await api('getOverview',{date:today()}).catch(()=>null);
+  const data = await api('getOverview',{date:APP.overviewDate}).catch(()=>null);
   if(!data){document.getElementById('owner-content').innerHTML='<div class="loading-text">Failed to load</div>';return;}
   const totIncome=data.branches.reduce((s,b)=>s+b.income,0);
   const totExp=data.branches.reduce((s,b)=>s+b.totalExp,0);
@@ -509,7 +532,7 @@ async function loadOwnerOverview(){
     <div class="metrics">
       <div class="metric"><div class="m-val">${fmt(totIncome)}</div><div class="m-lbl">Total Income</div></div>
       <div class="metric"><div class="m-val">${fmt(totExp)}</div><div class="m-lbl">Total Expenses</div></div>
-      <div class="metric" style="grid-column:1/-1"><div class="m-val">${fmt(totIncome-totExp)}</div><div class="m-lbl">Net Today — ${today()}</div></div>
+      <div class="metric" style="grid-column:1/-1"><div class="m-val">${fmt(totIncome-totExp)}</div><div class="m-lbl">Net — ${APP.overviewDate}</div></div>
     </div>
     <div class="card"><div class="card-header">📊 Income by Branch</div><div class="card-body"><div class="bar-chart">${bars}</div></div></div>
     <div class="card"><div class="card-header">Branch Summary</div><div class="card-body">${cards}</div></div>
@@ -568,6 +591,7 @@ async function fetchDetail(){
     ${(d.expenses||[]).length||oExpRows?`<div class="card"><div class="card-header">Expenses</div><div class="card-body">${expRows}${oExpRows?'<div style="margin-top:8px;font-size:12px;font-weight:600;color:var(--text3)">OWNER EXPENSES</div>'+oExpRows:''}</div></div>`:''}`;
 }
 async function loadOwnerExpenses(){
+  setTimeout(()=>{const d=document.getElementById('oe-date');if(d)d.value=APP.overviewDate;},100);
   const exps=await api('getOwnerExp',{branchId:'all'}).catch(()=>[]);
   const filt=(exps||[]).filter(e=>!APP.oeFilterBranch||e.branchId===APP.oeFilterBranch);
   document.getElementById('owner-content').innerHTML=`
@@ -582,6 +606,7 @@ async function loadOwnerExpenses(){
           <div class="field"><label>Amount (₹)</label><input type="number" id="oe-amt" inputmode="numeric" placeholder="0"/></div>
           <div class="field"><label>Mode</label><select id="oe-mode"><option>Cash</option><option>Online</option><option>Cheque</option><option>Other</option></select></div>
         </div>
+        <div class="field"><label>Date</label><input type="date" id="oe-date" value=""/></div>
         <div class="field"><label>Description</label><input type="text" id="oe-desc" placeholder="Expense description"/></div>
         <div class="field"><label>Remarks</label><input type="text" id="oe-rem" placeholder="Optional"/></div>
         <div class="toggle-row">
@@ -622,7 +647,8 @@ async function addOwnerExp(){
   const vis=document.getElementById('oe-vis')?.checked;
   if(!desc||!amt){showToast('Fill description & amount',true);return;}
   try{
-    await api('addOwnerExp',{branchId,amount:amt,description:desc,mode,remarks:rem,visibleToBranch:vis,date:today()});
+    const oeDate=document.getElementById('oe-date')?.value||APP.overviewDate;
+    await api('addOwnerExp',{branchId,amount:amt,description:desc,mode,remarks:rem,visibleToBranch:vis,date:oeDate});
     showToast('Expense added ✓');
     loadOwnerExpenses();
   }catch(e){}
@@ -631,6 +657,13 @@ async function delOwnerExp(rowId){
   if(!confirm('Delete this expense?'))return;
   await api('delOwnerExp',{rowId}).catch(()=>{});
   showToast('Deleted');loadOwnerExpenses();
+}
+
+// ---- RELOAD OWNER TAB ----
+function reloadOwnerTab(){
+  if(APP.ownerTab==='overview') loadOwnerOverview();
+  else if(APP.ownerTab==='details'){ APP.detailDate=APP.overviewDate; loadOwnerDetails(); }
+  else if(APP.ownerTab==='owner-exp') loadOwnerExpenses();
 }
 
 // ---- TOAST ----

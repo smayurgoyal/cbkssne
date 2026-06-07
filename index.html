@@ -341,9 +341,9 @@ async function renderCash() {
           <div class="field"><label>Cash</label><input type="number" id="c-cash" value="${saved.cash||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
           <div class="field"><label>Cash (Ice Cream)</label><input type="number" id="c-icecream" value="${saved.cashIcecream||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
           <div class="field"><label>Coupons</label><input type="number" id="c-coupons" value="${saved.coupons||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
-          <div class="field"><label>Tea/Coffee Coupons <span style="font-weight:400;color:var(--orange)">(× ₹20)</span></label>
+          <div class="field"><label>Tea/Coffee Coupons <span style="font-weight:400;color:var(--orange)">(× ₹15)</span></label>
             <input type="number" id="c-tea" value="${saved.teaCoffeeCount||''}" inputmode="numeric" placeholder="No. of coupons" oninput="calcCash()"/>
-            <div style="font-size:11px;color:var(--text3);margin-top:4px">Amount: <strong id="tea-amt">${fmt((Number(saved.teaCoffeeCount)||0)*20)}</strong></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Amount: <strong id="tea-amt">${fmt((Number(saved.teaCoffeeCount)||0)*15)}</strong></div>
           </div>
           <div class="field"><label>Online Transfer</label><input type="number" id="c-online" value="${saved.online||''}" inputmode="numeric" placeholder="0" oninput="calcCash()"/></div>
         </div>
@@ -358,7 +358,7 @@ async function renderCash() {
 }
 function calcCash(){
   const g=id=>Number(document.getElementById(id)?.value||0);
-  const teaAmt=g('c-tea')*20;
+  const teaAmt=g('c-tea')*15;
   const teaEl=document.getElementById('tea-amt');if(teaEl)teaEl.textContent=fmt(teaAmt);
   const t=g('c-cash')+g('c-icecream')+g('c-coupons')+teaAmt+g('c-online');
   const el=document.getElementById('cash-total');
@@ -367,7 +367,7 @@ function calcCash(){
 async function saveCash(){
   const g=id=>document.getElementById(id)?.value||'0';
   try{
-    await api('saveCash',{branchId:APP.user.branchId,date:APP.selectedDate,cash:g('c-cash'),cashIcecream:g('c-icecream'),coupons:g('c-coupons'),teaCoffeeCount:g('c-tea'),teaCoffee:g('c-tea')*20,online:g('c-online')});
+    await api('saveCash',{branchId:APP.user.branchId,date:APP.selectedDate,cash:g('c-cash'),cashIcecream:g('c-icecream'),coupons:g('c-coupons'),teaCoffeeCount:g('c-tea'),teaCoffee:g('c-tea')*15,online:g('c-online')});
     showToast('Collections saved ✓');
   }catch(e){}
 }
@@ -574,7 +574,7 @@ async function fetchDetail(){
       <div class="entry"><div class="entry-top"><span>Cash</span><span class="entry-amount">${fmt(d.cash.cash)}</span></div></div>
       <div class="entry"><div class="entry-top"><span>Cash (Ice Cream)</span><span class="entry-amount">${fmt(d.cash.cashIcecream||0)}</span></div></div>
       <div class="entry"><div class="entry-top"><span>Coupons</span><span class="entry-amount">${fmt(d.cash.coupons)}</span></div></div>
-      <div class="entry"><div class="entry-top"><span>Tea/Coffee (${d.cash.teaCoffeeCount||0} × ₹20)</span><span class="entry-amount">${fmt(d.cash.teaCoffee)}</span></div></div>
+      <div class="entry"><div class="entry-top"><span>Tea/Coffee (${d.cash.teaCoffeeCount||0} × ₹15)</span><span class="entry-amount">${fmt(d.cash.teaCoffee)}</span></div></div>
       <div class="entry"><div class="entry-top"><span>Online</span><span class="entry-amount">${fmt(d.cash.online)}</span></div></div>
     </div>`:'<div class="empty-state">No collections data</div>';
   const itemRows=(d.items||[]).length?(d.items.map(r=>`

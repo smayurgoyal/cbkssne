@@ -241,13 +241,17 @@ let APP = { user:null, branchTab:'cash', ownerTab:'overview', itemRows:[{name:''
 
 // ---- API ----
 async function api(action, params={}) {
-  const url = SCRIPT_URL + '?action=' + action + '&' + new URLSearchParams(params);
+  const body = JSON.stringify({action, ...params});
   try {
-    const res = await fetch(url);
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain'},
+      body: body
+    });
     const text = await res.text();
     let json;
     try { json = JSON.parse(text); }
-    catch(e) { throw new Error('Server response error - check Apps Script deployment'); }
+    catch(e) { throw new Error('Server error: ' + text.slice(0,100)); }
     if (!json.ok) throw new Error(json.error || 'API error');
     return json.data;
   } catch(e) {

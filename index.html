@@ -244,11 +244,14 @@ async function api(action, params={}) {
   const url = SCRIPT_URL + '?action=' + action + '&' + new URLSearchParams(params);
   try {
     const res = await fetch(url);
-    const json = await res.json();
+    const text = await res.text();
+    let json;
+    try { json = JSON.parse(text); }
+    catch(e) { throw new Error('Server response error - check Apps Script deployment'); }
     if (!json.ok) throw new Error(json.error || 'API error');
     return json.data;
   } catch(e) {
-    showToast('Error: ' + e.message, true);
+    showToast('⚠️ ' + e.message, true);
     throw e;
   }
 }
@@ -365,11 +368,13 @@ function calcCash(){
   if(el) el.textContent=fmt(t);
 }
 async function saveCash(){
-  const g=id=>document.getElementById(id)?.value||'0';
+  const g=id=>Number(document.getElementById(id)?.value||0);
   try{
-    await api('saveCash',{branchId:APP.user.branchId,date:APP.selectedDate,cash:g('c-cash'),cashIcecream:g('c-icecream'),coupons:g('c-coupons'),teaCoffeeCount:g('c-tea'),teaCoffee:g('c-tea')*15,online:g('c-online')});
+    await api('saveCash',{branchId:APP.user.branchId,date:APP.selectedDate,
+      cash:g('c-cash'),cashIcecream:g('c-icecream'),coupons:g('c-coupons'),
+      teaCoffeeCount:g('c-tea'),teaCoffee:g('c-tea')*15,online:g('c-online')});
     showToast('Collections saved ✓');
-  }catch(e){}
+  }catch(e){showToast('Error: '+e.message,true);}
 }
 
 // ---- ITEMS ----
@@ -664,8 +669,10 @@ async function addOwnerExp(){
 }
 async function delOwnerExp(rowId){
   if(!confirm('Delete this expense?'))return;
-  await api('delOwnerExp',{rowId}).catch(()=>{});
-  showToast('Deleted');loadOwnerExpenses();
+  try{
+    await api('delOwnerExp',{rowId:rowId});
+    showToast('Deleted');loadOwnerExpenses();
+  }catch(e){showToast('Error: '+e.message,true);}
 }
 
 // ---- RELOAD OWNER TAB ----

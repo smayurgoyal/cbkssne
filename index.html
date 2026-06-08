@@ -472,22 +472,24 @@ async function renderExpenses(){
   </div>`;
 }
 async function addExp(){
-  const desc=document.getElementById('exp-desc')?.value;
+  const desc=document.getElementById('exp-desc')?.value?.trim();
   const amt=document.getElementById('exp-amt')?.value;
   const mode=document.getElementById('exp-mode')?.value;
-  const rem=document.getElementById('exp-rem')?.value;
+  const rem=document.getElementById('exp-rem')?.value||'';
   if(!desc||!amt){showToast('Fill description & amount',true);return;}
+  const expDate=document.getElementById('exp-date')?.value||APP.selectedDate;
   try{
-    const expDate=document.getElementById('exp-date')?.value||APP.selectedDate;
-    await api('addExpense',{branchId:APP.user.branchId,description:desc,amount:amt,mode,remarks:rem,date:expDate});
+    await api('addExpense',{branchId:APP.user.branchId,description:desc,amount:amt,mode:mode,remarks:rem,date:expDate});
     showToast('Expense added ✓');
     renderExpenses();
-  }catch(e){}
+  }catch(e){showToast('Error: '+e.message,true);}
 }
 async function delExp(rowId){
   if(!confirm('Delete this expense?'))return;
-  await api('delExpense',{rowId}).catch(()=>{});
-  showToast('Deleted');renderExpenses();
+  try{
+    await api('delExpense',{branchId:APP.user.branchId,rowId:rowId});
+    showToast('Deleted');renderExpenses();
+  }catch(e){showToast('Error: '+e.message,true);}
 }
 
 // ---- HISTORY ----

@@ -433,7 +433,7 @@ async function saveItems(){
   try{
     await api('saveItems',{branchId:APP.user.branchId,date:APP.selectedDate,rows:JSON.stringify(APP.itemRows)});
     showToast('Item sales saved ✓');
-  }catch(e){}
+  }catch(e){showToast('Error: '+e.message,true);}
 }
 
 // ---- EXPENSES ----
@@ -503,7 +503,7 @@ async function delExp(rowId){
 
 // ---- HISTORY ----
 async function renderHistory(){
-  const data = await api('getHistory',{branchId:APP.user.branchId}).catch(()=>[]);
+  const data = await api('getHistory',{branchId:APP.user.branchId}).catch((e)=>{showToast('Error loading history: '+e.message,true);return [];});
   const rows = (data||[]).map(d=>`
     <div class="hist-row">
       <div><div class="hist-date">${d.date}</div><div class="hist-sub">Cash: ${fmt(d.cashTotal)} · Items: ${fmt(d.itemTotal)}</div></div>
@@ -529,7 +529,7 @@ function ownerTab(tab, el) {
 }
 async function loadOwnerOverview(){
   document.getElementById('owner-content').innerHTML='<div class="spinner"></div>';
-  const data = await api('getOverview',{date:APP.overviewDate}).catch(()=>null);
+  const data = await api('getOverview',{date:APP.overviewDate}).catch((e)=>{showToast('Error: '+e.message,true);return null;});
   if(!data){document.getElementById('owner-content').innerHTML='<div class="loading-text">Failed to load</div>';return;}
   const totIncome=data.branches.reduce((s,b)=>s+b.income,0);
   const totExp=data.branches.reduce((s,b)=>s+b.totalExp,0);
@@ -669,7 +669,7 @@ async function addOwnerExp(){
     await api('addOwnerExp',{branchId,amount:amt,description:desc,mode,remarks:rem,visibleToBranch:vis,date:oeDate});
     showToast('Expense added ✓');
     loadOwnerExpenses();
-  }catch(e){}
+  }catch(e){showToast('Error: '+e.message,true);}
 }
 async function delOwnerExp(rowId){
   if(!confirm('Delete this expense?'))return;
